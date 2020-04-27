@@ -14,7 +14,7 @@ const logout = {
    name: 'logout page',
    data () {
       return {
-         title: 'Logout page',
+         title: 'Logout page'
       }
    },
    
@@ -36,10 +36,12 @@ const logout = {
          axios.post('/api/v1/auth/logout', {token: token})
             .then(function (response) {
                localStorage.removeItem('token');
+               console.log("Logout. Server response: " + JSON.stringify(response));
                router.push('/');
 
             })
             .catch(function (error) {
+               console.log("Logout. Error. " + error);
             });
       } else {
          router.push('/');
@@ -48,6 +50,6 @@ const logout = {
          
    methods: {
    }
-}
+};
 
 

@@ -1,0 +1,58 @@
+
+CREATE TABLE sqlite_sequence(name,seq);
+CREATE TABLE IF NOT EXISTS users
+(
+id integer not null primary key autoincrement,
+name varchar not null,
+email varchar not null,
+password varchar not null,
+remember_token varchar,
+created_at datetime,
+updated_at datetime
+);
+CREATE UNIQUE INDEX "users_email_unique" on "users" ("email");
+
+CREATE TABLE IF NOT EXISTS "password_resets"
+(
+"email" varchar not null,
+"token" varchar not null,
+"created_at" datetime
+);
+CREATE INDEX "password_resets_email_index" on "password_resets" ("email");
+CREATE INDEX "password_resets_token_index" on "password_resets" ("token");
+
+CREATE TABLE IF NOT EXISTS "books"
+(
+  id integer not null primary key autoincrement,
+  user_id integer not null,
+  title varchar not null,
+  author varchar not null,
+  year integer,
+  read tinyint(1) not null,
+  rating integer,
+  created_at datetime,
+  updated_at datetime,
+  foreign key(user_id) references users(id)
+);
+
+CREATE TABLE IF NOT EXISTS tokens (
+   id integer PRIMARY KEY,
+   user_id integer,
+   token text NOT NULL,
+   expires date NOT NULL
+);
+
+
+INSERT INTO "books" VALUES(1,1,'Sorcerer''s Daughter','Terry Brooks',2009,1,4,'03-06-17 20:25:18','03-06-17 20:25:18');
+INSERT INTO "books" VALUES(2,1,'The Expanse','James S.A. Corey',2014,1,5,'03-07-17 00:13:13','03-07-17 00:13:13');
+INSERT INTO "books" VALUES(3,1,'The Stand','Steven King',1985,1,4,'03-07-17 00:21:31','03-07-17 00:21:31');
+INSERT INTO "books" VALUES(4,1,'Omega','Jack McDevitt',2005,0,4,'03-08-17 22:02:41','03-08-17 22:02:41');
+INSERT INTO "books" VALUES(5,1,'The Sword of Shannara','Terry Brooks',1985,0,4,NULL,NULL);
+INSERT INTO "books" VALUES(6,1,'Memory And Dream','Charles De Lint',1985,1,5,NULL,NULL);
+INSERT INTO "books" VALUES(7,1,'Redshirts','John Scalzi',2015,0,3,NULL,NULL);
+INSERT INTO "books" VALUES(8,2,'Test Book','Fred Farmerson',1986,1,3,NULL,NULL);
+INSERT INTO "books" VALUES(9,1,'Fuzzy Nation','John Scalzi',1013,1,5,NULL,NULL);
+INSERT INTO "books" VALUES(10,1,'Dreams Underfoot','Charles De Lint',1988,1,5,NULL,NULL);
+INSERT INTO "books" VALUES(11,1,'It','Steven King',1984,1,4,NULL,NULL);
+INSERT INTO "books" VALUES(12,1,'The Churn','James S.A. Corey',2007,0,4,NULL,NULL);
+INSERT INTO "books" VALUES(13,'Starhawk','Jack McDevitt',2015,1,4,NULL,NULL);

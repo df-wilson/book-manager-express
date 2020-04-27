@@ -7,10 +7,12 @@ app.use(express.static('public'));
 /* ----- The api routes ----- */
 let books = require('./routes/books');
 let home = require('./routes/home');
+let auth = require('./routes/auth');
 
 /* ----- Add the api routes ----- */
 app.use('/', home);
 app.use('/api/v1/books', books);
+app.use('/api/v1/auth', auth);
 
 /* ----- Handle unknown requests ----- */
 app.use(function (req, res, next) {
