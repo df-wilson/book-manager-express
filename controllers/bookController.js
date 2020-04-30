@@ -1,9 +1,6 @@
 
-let sqlite = require('sqlite3');
-
-let path = require('path');
-const appPath = path.resolve(__dirname, '..');
-const databasePath = appPath + '/db/db.sqlite';
+let bookRepository = require('../repositories/bookRepository.js');
+let tokenRepository = require('../repositories/tokenRepository.js');
 
 /**
  * Get all book data from the data store. The book data is returned as a JSON string in
@@ -11,101 +8,104 @@ const databasePath = appPath + '/db/db.sqlite';
  * {"message":"OK", "books":[{"author":"[string]]","id":[int],"rating":[int],"read":[bool],"title":"[string]","year":"[string]"},...]}
  *
  */
-exports.index = function(req, res) {
+exports.index = function(request, result)
+{
+   console.log("bookController::index - Request data: " + JSON.stringify(request.query));
 
-  let db = new sqlite.Database(databasePath);
+   tokenRepository.getUserIdForToken(request.query.token)
+      .then(function (userId) {
+         bookRepository.all(userId)
+            .then(function(list_books) {
+               console.log("bookController::index - return from database. Success.");
 
-  db.all('SELECT * from Books', (error, rows) => {
-    if(error) return console.log(error);
-    const data = rows;
-    
-    db.close();
+               let data = {
+                  msg: "ok",
+                  books: list_books
+               };
 
-    // Send the data to the client
-    let result = {
-      msg: "OK",
-      books: data
-    };
+               result.status(200).send(data);
+            })
+            .catch(function(error) {
+               console.log("bookController::index - error: " + error);
 
-    res.send(result);
-  });
+               let data = {
+                  msg: "error",
+                  books: []
+               };
+
+               result.status(500).send(data);
+            });
+      })
+      .catch(function(error)
+      {
+         console.log("bookController::index - Error getting user id from token. Error" + error);
+         
+         let data = {
+            msg: "unauthorized",
+            books: []
+         };
+
+         result.status(401).send(data);
+      });
 };
 
-/**
- * Get the data for a single book from the data store. The book data is returned as a JSON string in
- * the form:
- * {"message":"OK", "books":[{"author":"[string]]","id":[int],"rating":[int],"read":[bool],"title":"[string]","year":"[string]"}]}
- */
-exports.getById = function(req, res) {
-  let db = new sqlite.Database(databasePath);
-
-  const id = parseInt(req.params.id);
-
-  db.all('SELECT * from Books where id=?', id, (error, rows) => {
-    let msg = "Error retrieving book.";
-    let data = null;
-
-    if(error) {
-      data = [];
-    } else {
-      data = rows;
-      if(data.length === 0) {
-        msg = "Book not found."
-      } else {
-        msg = "OK";
-      }
-    }
-
-    db.close();
-
-    // Send the data to the client
-    let result = {
-      msg: msg,
-      books: data
-    };
-
-    res.send(result);
-  });
-};
 
 /**
  * Save the data for a new book in the data store. The book data is expected to be in JSON format
  * in the form:
  * {"title":"[title]","author":"[author]","year":"[year]","read":[bool],"rating":[0 to 5]}
  */
-exports.store = function(req, res)
+exports.store = function(request, result)
 {
-  const title = req.body.title;
-  const author = req.body.author;
-  const year = req.body.year;
-  const read = req.body.read;
-  const rating = req.body.rating;
+   console.log("bookController::store - Enter. Request data: " +JSON.stringify(request.body));
 
-  let message = "Unknown Error";
+   // Send the results to the client
+   let data = {
+      msg: "Unknown error",
+      errors: []
+   };
 
-  const errors = validate(title, author, year, read, rating);
+   tokenRepository.getUserIdForToken(request.query.token)
+      .then(function (userId) {
+         const errors = validate(request.body.title,
+            request.body.author,
+            request.body.year,
+            request.body.read,
+            request.body.rating);
 
-  if(errors.length) {
-    message = "Errors: Book not saved.";
-    res.statusCode = 401;
-  } else {
+         if(!userId) {
+            result.status(401).send("not authorized");
+         } else if(errors.length) {
+            console.log("bookController::store. Validate errors: " + errors);
+            data.msg = "Errors: Book not saved.";
+            data.errors = errors;
+            result.status(400).send(data);
+         } else {
+            bookRepository.store(userId,
+                                 request.body.title,
+                                 request.body.author,
+                                 request.body.year,
+                                 request.body.read,
+                                 request.body.rating)
+               .then(function() {
+                  data.msg = "Book Saved.";
+                  result.status(201).send(data);
+               })
+               .catch(function(error) {
+                  data.msg = "error saving book";
+                  data.errors = [error];
+                  result.status(500).send(data);
+               });
+         }
+      })
+      .catch(function(error) {
+         console.log("bookController::index - error: " + error);
 
-    let db = new sqlite.Database(databasePath);
-    const sql = "INSERT INTO books ('title', 'author', 'year', 'read', 'rating', 'created_at', 'updated_at') VALUES (?,?,?,?,?,?,?)";
-    let stmt = db.prepare(sql);
-    stmt.run(title, author, year, read, rating);
-    stmt.finalize();
-    db.close();
-    message = "Book Saved.";
-  }
+         data.msg = "error";
+         data.errors = [error];
 
-  // Send the results to the client
-  let data = {
-    msg: message,
-    errors: errors
-  };
-
-  res.send(data);
+         result.status(500).send(data);
+      });
 };
 
 /**
@@ -115,37 +115,48 @@ exports.store = function(req, res)
  */
 exports.update = function(request, result)
 {
-  const id = parseInt(request.params.id);
-  const title = request.body.title;
-  const author = request.body.author;
-  const year = request.body.year;
-  const read = request.body.read;
-  const rating = request.body.rating;
+   console.log("bookController::update - Enter. Request data: " +JSON.stringify(request.body));
 
-  let message = "Unknown Error";
+   const bookId = parseInt(request.params.id);
 
-  const errors = validate(title, author, year, read, rating);
+   tokenRepository.getUserIdForToken(request.query.token)
+      .then(function (userId) {
+         const errors = validate(request.body.title,
+                                 request.body.author,
+                                 request.body.year,
+                                 request.body.read,
+                                 request.body.rating);
 
-  if(errors.length) {
-    message = "Errors: Book not saved.";
-    result.statusCode = 401;
-  } else {
-    const sql = "UPDATE books SET title = ?, author= ?, year = ?, read = ? , rating = ? WHERE id = ?";
-    let db = new sqlite.Database(databasePath);
-    let stmt = db.prepare(sql);
-    stmt.run(title, author, year, read, rating, id);
-    stmt.finalize();
-    db.close();
-    message = "Book Saved.";
-  }
+         if(errors.length) {
+            result.status(401).send("not authorized");
+         } else {
+            bookRepository.update(userId,
+                                  bookId,
+                                  request.body.title,
+                                  request.body.author,
+                                  request.body.year,
+                                  request.body.read,
+                                  request.body.rating)
+               .then(function() {
+                  result.status(200).send("book updated");
+               })
+               .catch(function(error) {
+                  data.msg = "error saving book";
+                  data.errors = error;
+                  result.status(500).send(data);
+               });
+         }
+      })
+      .catch(function(error){
+         console.log("bookController::update - error: " + error);
 
-  // Send the results to the client
-  let data = {
-    msg: message,
-    errors: errors
-  };
+         let data = {
+            msg: "error",
+            books: []
+         };
 
-  result.send(data);
+         result.status(500).send(data);
+      });
 };
 
 /**
@@ -153,22 +164,29 @@ exports.update = function(request, result)
  */
 exports.delete = function(request, result)
 {
-  const id = parseInt(request.params.id);
+  const bookId = parseInt(request.params.id);
 
-  const sql = "DELETE FROM books WHERE id = ?";
-  let db = new sqlite.Database(databasePath);
-  let stmt = db.prepare(sql);
-  stmt.run(id);
-  stmt.finalize();
-  db.close();
-
-  // Send the results to the client
-  let data = {
-    msg: "OK",
-    errors: []
-  };
-
-  result.send(data);
+   tokenRepository.getUserIdForToken(request.query.token)
+      .then(function (userId) {
+         if(userId) {
+            bookRepository.delete(userId, bookId)
+               .then(function() {
+                  let msg = "book removed";
+                  result.status(200).send(msg);
+               })
+               .catch(function(error){
+                  console.log("bookController::delete - error: " + error);
+                  result.status(500).send(error);
+               });
+         } else {
+            console.log("bookController::delete - User not found.");
+            result.status(401).send("user not authorized");
+         }
+      })
+      .catch(function(error){
+         console.log("bookController::index - error: " + error);
+         result.status(500).send(error);
+      });
 };
 
 /**
@@ -198,12 +216,12 @@ function validate(title, author, year, isRead, rating)
     errors.push("year must be between 0 and 3000.");
   }
 
-  if(typeof(isRead) !== "boolean" || typeof(isRead) !== "number") {
+  if(typeof(isRead) !== "boolean" && typeof(isRead) !== "number") {
     errors.push("read must be boolean value")
   }
 
   let intRating = parseInt(rating);
-  if(!rating || intRating < 0 || intRating > 5) {
+  if(rating && (intRating < 0 || intRating > 5)) {
     errors.push("rating must be between 0 and 5");
   }
 

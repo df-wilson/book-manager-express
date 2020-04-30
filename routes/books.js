@@ -11,8 +11,6 @@ let bookController = require('../controllers/bookController');
 
 router.get('/', bookController.index);
 
-router.get('/:id', bookController.getById);
-
 router.post('/', upload.array(), bookController.store);
 
 router.put('/:id', bookController.update);

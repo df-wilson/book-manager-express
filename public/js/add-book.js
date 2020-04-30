@@ -230,16 +230,13 @@ const add_book = {
          var token = localStorage.getItem("token");
          axios.post('/api/v1/books?token='+token, vm.book)
               .then(function(response) {
-                  vm.book.id = response.data.id;
-                  vm.books.push(vm.book);
                   vm.clearForm();
                })
               .catch(function(error) {
                   vm.clearErrors();
-                  alert("Error param in response " + JSON.stringify(error)); 
-               
-                  if(error.response.data.errors) {
-                     vm.displayErrors(error.response.data.errors);
+                 
+                  if(error) {
+                     vm.displayErrors(error);
                   } else {
                      alert("Errors undefined in response " + JSON.stringify(error)); 
                   }
@@ -267,6 +264,6 @@ const add_book = {
                   vm.clearErrors();
                   vm.displayErrors(error.response.data.errors);
                });
-      },
+      }
    }
-}
+};
