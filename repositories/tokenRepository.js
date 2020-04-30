@@ -12,17 +12,17 @@ const USER_ID_SQL = "SELECT user_id FROM tokens where token = ?";
 
 exports.create = function(userId)
 {
-   console.log("In tokenRepository::create - userId is: " + userId);
+   console.log("tokenRepository::create - userId is: " + userId);
 
    return new Promise(function (resolve, reject) {
       getTokenForUserId(userId)
          .then(function(token) {
             if(token) {
-               console.log("In tokenRepository::create - Existing token: " + token);
+               console.log("tokenRepository::create - Existing token: " + token);
                resolve(token);
             } else {
                token = generateToken(userId);
-               console.log("In tokenRepository::create - New token: " + token);
+               console.log("tokenRepository::create - New token: " + token);
 
                // Save token to database. Don't need to wait for result.
                let db = new sqlite.Database(databasePath);
@@ -41,7 +41,7 @@ exports.create = function(userId)
 
 exports.getUserIdForToken = function(token)
 {
-   console.log("In TokenRepository::getUserIdForToken. Token: " + token);
+   console.log("tokenRepository::getUserIdForToken. Token: " + token);
 
    return new Promise(function (resolve, reject)
    {
@@ -50,10 +50,10 @@ exports.getUserIdForToken = function(token)
          db.close();
 
          if (err) {
-            console.log('In tokenRepository::getUserIdForToken - Promise error: ' + err);
+            console.log('tokenRepository::getUserIdForToken - Promise error: ' + err);
             reject(new Error('Error' + err));
          } else {
-            console.log("In tokenRepository::getUserIdForToken - User Id: " + row.user_id);
+            console.log("tokenRepository::getUserIdForToken - User Id: " + row.user_id);
             resolve(row.user_id);
          }
       });
@@ -71,14 +71,14 @@ exports.removeToken = function(token)
          db.close();
 
          if (err) {
-            console.log('In tokenRepository::removeToken - Leave. Promise error: ' + err);
+            console.log('tokenRepository::removeToken - Leave. Promise error: ' + err);
             reject(new Error('An error occurred removing token'));
          } else {
             let token = 0;
             if(row) {
                token = row.token;
             }
-            console.log("In tokenRepository::removeToken - Leave. Token removed");
+            console.log("tokenRepository::removeToken - Leave. Token removed");
             resolve();
          }
       });
@@ -86,7 +86,7 @@ exports.removeToken = function(token)
 };
 
 function getTokenForUserId(userId) {
-   console.log("In tokenRepository::getTokenForUserId - Enter. User Id: " + userId);
+   console.log("tokenRepository::getTokenForUserId - Enter. User Id: " + userId);
 
    return new Promise(function (resolve, reject)
    {
@@ -95,14 +95,14 @@ function getTokenForUserId(userId) {
          db.close();
          
          if (err) {
-            console.log('In tokenRepository::getTokenForUserId - Leave. Promise error: ' + err);
+            console.log('tokenRepository::getTokenForUserId - Leave. Promise error: ' + err);
             reject(new Error('An error occurred'));
          } else {
             let token = 0;
             if(row) {
                token = row.token;
             }
-            console.log("In tokenRepository::getTokenForUserId - Leave. Row " + token);
+            console.log("tokenRepository::getTokenForUserId - Leave. Row " + token);
             resolve(token);
          }
       });
