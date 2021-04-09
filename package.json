@@ -6,19 +6,19 @@
   "scripts": {
     "start": "node ./bin/www",
     "devstart": "nodemon ./bin/www",
-    "serverstart": "DEBUG=express-locallibrary-tutorial:* npm run devstart"
+    "serverstart": "DEBUG=book-manager-express:* npm run devstart"
   },
-
   "author": "Dean Wilson",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.17.1",
-    "express": "~4.16.1",
-    "multer": "^1.3.0",
-    "sqlite3": "^4.1.1"
+    "body-parser": "^1.19.0",
+    "cookie-parser": "^1.4.5",
+    "express": "~4.17.1",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.2",
+    "sqlite3": "^5.0.2"
   },
-
   "devDependencies": {
-    "nodemon": "^2.0.3"
+    "nodemon": "^2.0.7"
   }
 }
